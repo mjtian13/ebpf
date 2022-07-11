@@ -17,6 +17,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"reflect"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -27,6 +28,7 @@ import (
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cc $BPF_CLANG -cflags $BPF_CFLAGS bpf xdp.c -- -I../headers
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	if len(os.Args) < 2 {
 		log.Fatalf("Please specify a network interface")
 	}
@@ -73,18 +75,22 @@ func main() {
 }
 
 type info struct{
-	dest_ip []byte
+	dest_ip [256]byte
 	src_port uint32
 }
 
 func formatMapContents(m *ebpf.Map) (string, error) {
-	var (
-		sb strings.Builder
-		key []byte
-		val info
-	)
+	//fmt.Println("CP0")
+	var sb strings.Builder
+	var key []byte
+	//fmt.Println("CP1")
+	var val info
+	v := reflect.ValueOf(val)
+	values := make([]interface{}, v.NumField())
 	iter := m.Iterate()
-	for iter.Next(&key, &val) {
+	fmt.Println("CP3")
+	for iter.Next(&key, &values) {
+		fmt.Println("CP4")
 		sourceIP := net.IP(key) // IPv4 source address in network byte order.
 		//destIP := net.IP(val.dest_ip)
 		
