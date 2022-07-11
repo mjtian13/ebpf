@@ -86,9 +86,10 @@ func formatMapContents(m *ebpf.Map) (string, error) {
 	iter := m.Iterate()
 	for iter.Next(&key, &val) {
 		sourceIP := net.IP(key) // IPv4 source address in network byte order.
-		destIP := net.IP(val.dest_ip)
+		//destIP := net.IP(val.dest_ip)
 		
-		sb.WriteString(fmt.Sprintf("\t Source IP is %s \t Destination IP is %s \t Source Port is %d\n", sourceIP, destIP, val.src_port))
+		//sb.WriteString(fmt.Sprintf("\t Source IP is %s \t Destination IP is %s \t Source Port is %d\n", sourceIP, destIP, val.src_port))
+		sb.WriteString(fmt.Sprintf("\t Source IP is %s", sourceIP))
 	}
 	return sb.String(), iter.Err()
 }

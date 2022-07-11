@@ -2,13 +2,12 @@
 
 #include "bpf_endian.h"
 #include "common.h"
-#include <bpf/bpf.h>
-#include <bpf/libbpf.h>
-#include <linux/bpf.h>
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
 #define MAX_MAP_ENTRIES 16
+#define ETH_HLEN 14
+#define IPPROTO_TCP 6
 
 struct pair {
 	u32 dest_ip;
@@ -37,8 +36,9 @@ int xdp_prog_func(struct xdp_md *ctx) {
 	if (eth->h_proto == bpf_htons(ETH_P_IP)) {
 		struct iphdr *ip = (struct iphdr *)(((void *)eth) + ETH_HLEN);
 
-		if (ip + 1 > data_end) {
-			return XDP_PASS;
+		if (((void *)(ip + 1)) > data_end) {
+			// return XDP_PASS;
+			return XDP_DROP;
 		}
 
 		if (ip->protocol == IPPROTO_TCP) {
