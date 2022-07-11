@@ -63,7 +63,7 @@ func main() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	for range ticker.C {
-		s, err := formatMapContents(objs.XdpStatsMap)
+		s, err := formatMapContents(objs.XdpTcppacketsMap)
 		if err != nil {
 			log.Printf("Error reading map: %s", err)
 			continue
@@ -72,17 +72,23 @@ func main() {
 	}
 }
 
+type info struct{
+	dest_ip []byte
+	src_port uint32
+}
+
 func formatMapContents(m *ebpf.Map) (string, error) {
 	var (
 		sb strings.Builder
 		key []byte
-		val uint32
+		val info
 	)
 	iter := m.Iterate()
 	for iter.Next(&key, &val) {
 		sourceIP := net.IP(key) // IPv4 source address in network byte order.
-		packetCount := val
-		sb.WriteString(fmt.Sprintf("\t%s => %d\n", sourceIP, packetCount))
+		destIP := net.IP(val.dest_ip)
+		
+		sb.WriteString(fmt.Sprintf("\t Source IP is %s \t Destination IP is %s \t Source Port is %d\n", sourceIP, destIP, val.src_port))
 	}
 	return sb.String(), iter.Err()
 }
