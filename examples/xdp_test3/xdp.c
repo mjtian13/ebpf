@@ -18,7 +18,7 @@ struct pair {
 
 /* Define an LRU hash map for storing packet count by source IPv4 address */
 struct {
-	__uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+	__uint(type, BPF_MAP_TYPE_LRU_HASH);
 	__uint(max_entries, MAX_MAP_ENTRIES);
 	__type(key, __u32);   // source IPv4 address saddr
 	__type(value, __u32); // printing the struct pair
@@ -33,7 +33,7 @@ int xdp_prog_func(struct xdp_md *ctx) {
 
 	struct ethhdr *eth = data;
 	if ((void *)(eth + 1) > data_end) {
-		return XDP_DROP;
+		return XDP_PASS;
 	}
 
 	if (eth->h_proto == bpf_htons(ETH_P_IP)) {
@@ -41,10 +41,10 @@ int xdp_prog_func(struct xdp_md *ctx) {
 
 		if (((void *)(ip + 1)) > data_end) {
 			// return XDP_PASS;
-			return XDP_DROP;
+			return XDP_PASS;
 		}
 
-		if (ip->protocol == IPPROTO_TCP) {
+		if ((ip->protocol == IPPROTO_TCP) && (ip->tot_len != 0)) {
 			// code
 			src_ip_key = ip->saddr;
 			dest_ip    = ip->daddr;
@@ -57,7 +57,7 @@ int xdp_prog_func(struct xdp_md *ctx) {
 	}
 
 	else {
-		return XDP_DROP;
+		return XDP_PASS;
 	}
 
 	/*
@@ -72,5 +72,5 @@ int xdp_prog_func(struct xdp_md *ctx) {
 		__sync_fetch_and_add(pkt_count, 1);
 	}
 	*/
-	return XDP_DROP;
+	return XDP_PASS;
 }
